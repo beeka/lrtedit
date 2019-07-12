@@ -32,7 +32,8 @@ SOURCES += \
         luatable.cpp \
         main.cpp \
         mainwindow.cpp \
-        pageeditor.cpp
+        pageeditor.cpp \
+        settingsdialog.cpp
 
 HEADERS += \
         layoutelement.h \
@@ -41,11 +42,13 @@ HEADERS += \
         luaparser.h \
         luatable.h \
         mainwindow.h \
-        pageeditor.h
+        pageeditor.h \
+        settingsdialog.h
 
 FORMS += \
         mainwindow.ui \
-        pageeditor.ui
+        pageeditor.ui \
+        settingsdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
