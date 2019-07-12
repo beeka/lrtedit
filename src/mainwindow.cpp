@@ -18,6 +18,7 @@
 #include "layoutpage.h"
 #include "luagenerator.h"
 #include "luaparser.h"
+#include "pageeditor.h"
 
 #include <QDebug>
 #include <QDir>
@@ -30,9 +31,9 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    ui->listWidget->setViewMode(QListWidget::IconMode);
-    ui->listWidget->setIconSize(QSize(100, 100));
-    ui->listWidget->setResizeMode(QListWidget::Adjust);
+    ui->pagesPreview->setViewMode(QListWidget::IconMode);
+    ui->pagesPreview->setIconSize(QSize(100, 100));
+    ui->pagesPreview->setResizeMode(QListWidget::Adjust);
 
     determineRoots();
     // setRoot("C:\\Program Files\\Adobe\\Adobe Lightroom\\Templates\\Layout Templates");
@@ -210,7 +211,7 @@ void MainWindow::loadTemplate(const QString &specificTemplatePages)
         // qDebug() << "PNG saved to" <<
         image.save(pngPath);
 
-        ui->listWidget->addItem(
+        ui->pagesPreview->addItem(
             new QListWidgetItem(QIcon(QPixmap::fromImage(image)), QString::number(i)));  // page.getString("title")));
 
         const double grid = 0.5;
@@ -229,7 +230,8 @@ void MainWindow::loadTemplate(const QString &specificTemplatePages)
         snappedImage.save(snappedPath);
         layoutPages.append(lp);
 
-        ui->listWidget->addItem(new QListWidgetItem(QIcon(QPixmap::fromImage(snappedImage)), QString::number(i) + "s"));
+        ui->pagesPreview->addItem(
+            new QListWidgetItem(QIcon(QPixmap::fromImage(snappedImage)), QString::number(i) + "s"));
     }
 
     // Dump updated positions
@@ -271,3 +273,10 @@ void MainWindow::on_actionOpen_triggered()
 }
 
 void MainWindow::on_templateSizesCB_currentIndexChanged(int index) {}
+
+void MainWindow::on_pagesPreview_itemDoubleClicked(QListWidgetItem *item)
+{
+    PageEditor editor(this);
+    editor.setPreviewImage(item->icon());
+    editor.exec();
+}

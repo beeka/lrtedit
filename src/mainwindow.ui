@@ -25,7 +25,7 @@
      <widget class="QComboBox" name="templatesCB"/>
     </item>
     <item row="2" column="0">
-     <widget class="QListWidget" name="listWidget"/>
+     <widget class="QListWidget" name="pagesPreview"/>
     </item>
    </layout>
   </widget>

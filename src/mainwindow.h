@@ -17,6 +17,7 @@
 
 #include "luaparser.h"
 
+#include <QListWidgetItem>
 #include <QMainWindow>
 
 // From https://forums.adobe.com/thread/1254145, can use local templates:
@@ -51,6 +52,8 @@ class MainWindow : public QMainWindow
     void on_actionOpen_triggered();
 
     void on_templateSizesCB_currentIndexChanged(int index);
+
+    void on_pagesPreview_itemDoubleClicked(QListWidgetItem *item);
 
    private:
     Ui::MainWindow *ui;
