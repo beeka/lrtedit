@@ -1,6 +1,7 @@
 ---
 Language: Cpp
 BasedOnStyle: Google
+AllowShortFunctionsOnASingleLine: Inline
 BreakBeforeBraces: Allman
 IncludeBlocks: Preserve
 IndentWidth: '4'
