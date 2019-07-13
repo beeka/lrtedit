@@ -35,6 +35,9 @@ class TestLuaParser : public QObject
     void test_case2b();
     void test_case2c();
     void test_file();
+
+    // TODO: generator tests should be moved out to a separate test
+    void test_generator();
 };
 
 using namespace LuaParser;
@@ -258,6 +261,34 @@ void TestLuaParser::test_file()
     else
     {
         QSKIP("templatePages.lua file is not present");
+    }
+}
+
+void TestLuaParser::test_generator()
+{
+    const QString s =
+        ("transform = {\n"
+         "   angle = 0,\n"
+         "   height = 435.5,\n"
+         "   width = 580.09771728516,\n"
+         "   x = 0,\n"
+         "   y = 348,\n"
+         "   }");
+
+    const NamedVariant nv = parseLuaStruct(s);
+    QCOMPARE(nv.name(), QString("transform"));
+
+    const QString t = LuaGenerator::Generate(nv);
+
+    // Compare the output line-by-line so we can make sense of errors.
+    // The line is trimmed to remove whitespace, as we generate with spaces but LR uses tabs
+    const QStringList a = s.split('\n');
+    const QStringList b = t.split('\n');
+    for (int i = 0; i < a.size(); i++)
+    {
+        //        qDebug() << i << a[i].trimmed();
+        //        qDebug() << i << b[i].trimmed();
+        QCOMPARE(b[i].trimmed(), a[i].trimmed());
     }
 }
 
