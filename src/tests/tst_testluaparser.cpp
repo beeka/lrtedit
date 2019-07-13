@@ -35,9 +35,11 @@ class TestLuaParser : public QObject
     void test_case2b();
     void test_case2c();
     void test_file();
+    void test_number_list();
 
     // TODO: generator tests should be moved out to a separate test
     void test_generator();
+    void test_generator_mix();
 };
 
 using namespace LuaParser;
@@ -75,6 +77,21 @@ void TestLuaParser::test_list()
     QVERIFY(nv.value().canConvert<Table>());
     const Table t = nv.value().value<Table>();
     QCOMPARE(t.hash(), 7);
+    QCOMPARE(t.keys().size(), 0);
+}
+
+void TestLuaParser::test_number_list()
+{
+    QSKIP("Lists of numbers don't work, but not strictly needed for LRTedit");
+
+    const NamedVariant nv = parseLuaStruct("testing = {1, 2, 3, 4}");
+
+    // qDebug() << LuaGenerator::Generate(nv);
+    QCOMPARE(nv.name(), QString("testing"));
+
+    QVERIFY(nv.value().canConvert<Table>());
+    const Table t = nv.value().value<Table>();
+    QCOMPARE(t.hash(), 4);
     QCOMPARE(t.keys().size(), 0);
 }
 
@@ -277,6 +294,42 @@ void TestLuaParser::test_generator()
 
     const NamedVariant nv = parseLuaStruct(s);
     QCOMPARE(nv.name(), QString("transform"));
+
+    const QString t = LuaGenerator::Generate(nv);
+
+    // Compare the output line-by-line so we can make sense of errors.
+    // The line is trimmed to remove whitespace, as we generate with spaces but LR uses tabs
+    const QStringList a = s.split('\n');
+    const QStringList b = t.split('\n');
+    for (int i = 0; i < a.size(); i++)
+    {
+        //        qDebug() << i << a[i].trimmed();
+        //        qDebug() << i << b[i].trimmed();
+        QCOMPARE(b[i].trimmed(), a[i].trimmed());
+    }
+}
+
+void TestLuaParser::test_generator_mix()
+{
+    const QString s =
+        ("polyline = {\n"
+         "   {\n"
+         "      x = 0,\n"
+         "      y = 0,\n" /* omit comma on list printing? */
+         "   },\n"
+         "   {\n"
+         "      x = -10,\n"
+         "      y = 42,\n"
+         "   },\n"
+         "   color = \"blue\",\n"
+         "   npoints = 4,\n"
+         "   thickness = 2,\n"
+         "}");
+
+    const NamedVariant nv = parseLuaStruct(s);
+    qDebug() << LuaGenerator::Generate(nv);
+
+    QCOMPARE(nv.name(), QString("polyline"));
 
     const QString t = LuaGenerator::Generate(nv);
 

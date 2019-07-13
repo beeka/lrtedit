@@ -69,6 +69,13 @@ QString LuaGenerator::Generate(const QVariant &value, int indent)
 
         s += "{\n";
 
+        // Print all list items
+        for (int i = 1; i <= t.hash(); i++)
+        {
+            s += QString(indent, ' ') + Generate(t[i], indent + indentWidth);
+            s += ",\n";
+        }
+
         // Print all named items
         const auto keys = t.keys();
         for (auto k : keys)
@@ -78,13 +85,6 @@ QString LuaGenerator::Generate(const QVariant &value, int indent)
                 qDebug() << t[k];
             }
             s += QString(indent, ' ') + k + " = " + Generate(t[k], indent + indentWidth);
-            s += ",\n";
-        }
-
-        // Print all list items
-        for (int i = 1; i <= t.hash(); i++)
-        {
-            s += QString(indent, ' ') + Generate(t[i], indent + indentWidth);
             s += ",\n";
         }
 
