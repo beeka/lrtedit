@@ -48,7 +48,8 @@ QString LuaGenerator::Generate(const QVariant &value, int indent)
     else if (value.type() == static_cast<QVariant::Type>(QMetaType::Double))
     {
         const double d = value.value<double>();
-        s += QString::number(d);
+        // A double has 15 digits of precision, so allow all of them to be printed
+        s += QString::number(d, 'g', 15);
     }
     else if (value.type() == static_cast<QVariant::Type>(QMetaType::Bool))
     {
