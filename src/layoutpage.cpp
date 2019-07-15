@@ -153,5 +153,5 @@ QImage LayoutPage::createImage() const
 
     QPainter painter(&image);
     scene.render(&painter);
-    return image;
+    return image.mirrored(false, true);  // Mirror vertically as the axis is inverted
 }
