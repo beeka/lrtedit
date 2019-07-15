@@ -143,6 +143,7 @@ void MainWindow::loadTemplates(const QString &path)
 
 void MainWindow::loadTemplate(const QString &specificTemplatePages)
 {
+    qInfo() << "Loading template from" << specificTemplatePages;
     m_currentTemplatePath = specificTemplatePages;
 
     using namespace LuaParser;
@@ -159,13 +160,12 @@ void MainWindow::loadTemplate(const QString &specificTemplatePages)
     auto pages = m_currentTemplate.getAttr("pages").value<LuaParser::Table>();
     qDebug() << pages.hash() << "pages";
 
-    QList<LayoutPage> layoutPages;
+    m_layoutPages.clear();
 
     // pages/#/title
     // pages/#/pageWidth
     // pages/#/pageHeight
     // pages/#/previewName
-    // pages/#/1/children/#/hints/placeholderType = "photo"
     // pages/#/1/children/#/hints/placeholderType = "photo"
     // pages/#/1/children/#/hints/photoIndex
     // pages/#/1/children/#/transform/x
@@ -203,13 +203,14 @@ void MainWindow::loadTemplate(const QString &specificTemplatePages)
         const QImage image = lp.createImage();
 
         // Save a preview
-        const QString previewPath = QDir("c:/tmp").filePath(lp.previewName);
+        // const QString previewPath = QDir::temp().filePath(lp.previewName);
+        const QString previewPath = QDir("C:/tmp").filePath(lp.previewName);
         image.scaled(QSize(100, 100), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation).save(previewPath);
 
         // Save a full png?
-        const QString pngPath = previewPath.left(previewPath.length() - 4) + ".png";
-        // qDebug() << "PNG saved to" <<
-        image.save(pngPath);
+        //        const QString pngPath = previewPath.left(previewPath.length() - 4) + ".png";
+        //        // qDebug() << "PNG saved to" <<
+        //        image.save(pngPath);
 
         ui->pagesPreview->addItem(
             new QListWidgetItem(QIcon(QPixmap::fromImage(image)), QString::number(i)));  // page.getString("title")));
@@ -228,15 +229,19 @@ void MainWindow::loadTemplate(const QString &specificTemplatePages)
         const QImage snappedImage = lp.createImage();
         const QString snappedPath = previewPath.left(previewPath.length() - 4) + "snapped.png";
         snappedImage.save(snappedPath);
-        layoutPages.append(lp);
+
+        const QString snappedPreviewPath = previewPath.left(previewPath.length() - 4) + "s.jpg";
+        snappedImage.scaled(QSize(100, 100), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation)
+            .save(snappedPreviewPath);
+
+        m_layoutPages.append(lp);
 
         ui->pagesPreview->addItem(
             new QListWidgetItem(QIcon(QPixmap::fromImage(snappedImage)), QString::number(i) + "s"));
     }
 
     // Dump updated positions
-
-    for (auto const &lp : layoutPages)
+    for (auto const &lp : m_layoutPages)
     {
         for (auto const &p : lp.photos)
         {
@@ -279,4 +284,52 @@ void MainWindow::on_pagesPreview_itemDoubleClicked(QListWidgetItem *item)
     PageEditor editor(this);
     editor.setPreviewImage(item->icon());
     editor.exec();
+}
+
+void MainWindow::on_actionSave_triggered()
+{
+    // Update / generate the stored file with the current layout
+    auto &table = m_currentTemplate;
+    int page = 1;
+    for (auto const &lp : m_layoutPages)
+    {
+        int element = 1;
+        for (auto const &p : lp.photos)
+        {
+            const QString transform = QString("pages/%1/1/children/%2/transform").arg(page).arg(element);
+
+            table.setAttr(transform + "/x", p.pos.x());
+            table.setAttr(transform + "/y", p.pos.y());
+            table.setAttr(transform + "/width", p.pos.width());
+            table.setAttr(transform + "/height", p.pos.height());
+
+            element++;
+        }
+
+        const QImage previewImage =
+            lp.createImage().scaled(QSize(100, 100), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+        const QString previewPath = QFileInfo(m_currentTemplatePath).dir().filePath(lp.previewName);
+        previewImage.save(previewPath);
+
+        page++;
+    }
+
+    // Write the layout to a file
+    {
+        const LuaParser::NamedVariant nv("pages", QVariant::fromValue(m_currentTemplate));
+
+        const QString s = LuaGenerator::Generate(nv);
+
+        const QString path = m_currentTemplatePath;
+        QFile f(path);
+        if (f.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
+        {
+            qDebug() << "Writing" << s.size() << "bytes to" << path;
+            f.write(s.toUtf8());
+        }
+        else
+        {
+            qCritical() << "Error opening file for writing:" << path;
+        }
+    }
 }

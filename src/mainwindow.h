@@ -17,6 +17,9 @@
 
 #include "luaparser.h"
 
+#include "layoutpage.h"
+
+#include <QList>
 #include <QListWidgetItem>
 #include <QMainWindow>
 
@@ -47,6 +50,8 @@ class MainWindow : public QMainWindow
     void setRoot(const QString &path);
     void loadTemplateSizes(const QString &path);
     void loadTemplates(const QString &path);
+
+    /// @param specificTemplatePages The path to the .lua file which contains the template to modify
     void loadTemplate(const QString &specificTemplatePages);
    private slots:
     void on_actionOpen_triggered();
@@ -54,6 +59,8 @@ class MainWindow : public QMainWindow
     void on_templateSizesCB_currentIndexChanged(int index);
 
     void on_pagesPreview_itemDoubleClicked(QListWidgetItem *item);
+
+    void on_actionSave_triggered();
 
    private:
     Ui::MainWindow *ui;
@@ -68,6 +75,7 @@ class MainWindow : public QMainWindow
 
     QString m_currentTemplatePath;
     LuaParser::Table m_currentTemplate;
+    QList<LayoutPage> m_layoutPages;
 };
 
 #endif // MAINWINDOW_H
