@@ -45,6 +45,7 @@ class NamedVariant : public QPair<QString, QVariant>
     NamedVariant(const QString &n, const QVariant &v) : QPair<QString, QVariant>(n, v) {}
     const QString &name() const { return this->first; }
     const QVariant &value() const { return this->second; }
+    void setValue(const QVariant &value) { this->second = value; }
 };
 
 
