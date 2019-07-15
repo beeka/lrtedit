@@ -1,4 +1,5 @@
 #include "luatable.h"
+#include <QDebug>
 
 namespace LuaParser
 {
@@ -10,6 +11,7 @@ const QVariant &LuaParser::Table::operator[](int index) const
     }
     else
     {
+        qCritical() << "Index out of range:" << index << ", valid const range is 1 to" << this->list.size();
         throw QException();
     }
 }
@@ -22,20 +24,44 @@ QVariant &Table::operator[](int index)
     }
     else
     {
+        qCritical() << "Index out of range:" << index << ", valid non-const range is 1 to" << this->list.size() + 1;
         throw QException();
     }
 }
 
-const QVariant Table::operator[](const QString &index) const { return dictionary[index]; }
+const QVariant Table::operator[](const QString &index) const
+{
+    if (dictionary.contains(index))
+    {
+        return dictionary[index];
+    }
+    else
+    {
+        qCritical() << "Invalid index '" + index + "' in const string index lookup.";
+        qDebug() << "Valid keys are:" << dictionary.keys().join(',');
+        throw QException();
+    }
+}
 
-QVariant &Table::operator[](const QString &index) { return dictionary[index]; }
+QVariant &Table::operator[](const QString &index)
+{
+    return dictionary[index];
+}
 
-void Table::append(const QVariant &value) { list.append(value); }
+void Table::append(const QVariant &value)
+{
+    list.append(value);
+}
 
-int Table::hash() const { return list.size(); }
+int Table::hash() const
+{
+    return list.size();
+}
 
-QList<QString> Table::keys() const { return dictionary.keys(); }
-
+QList<QString> Table::keys() const
+{
+    return dictionary.keys();
+}
 
 
 const QVariant Table::getAttr(const QString &attr) const
@@ -62,9 +88,11 @@ const QVariant Table::getAttr(const QString &attr) const
     }
 }
 
-
+/// @note Currently unable to extend lists or add new attributes with this
+///  function (the asserts will fire if you try)
 void Table::setAttr(const QString &attr, const QVariant &value)
 {
+    // qDebug() << "setAttr(" << attr << ", " << value.toString() << ")";
     int pos = attr.indexOf('/');
     if (pos > 0)
     {
@@ -78,12 +106,16 @@ void Table::setAttr(const QString &attr, const QVariant &value)
         if (a[0].isDigit())
         {
             const int index = a.toInt();
-            auto t = this->list[index].value<Table>();
+            Q_ASSERT(index > 0);
+            Q_ASSERT(index <= this->list.size());
+            // Need to make a copy of the value, update it and then write it back again
+            auto t = this->list[index - 1].value<Table>();
             t.setAttr(b, value);
-            this->list[index].setValue(t);
+            this->list[index - 1].setValue(t);
         }
         else
         {
+            Q_ASSERT(this->dictionary.contains(a));
             auto t = this->dictionary[a].value<Table>();
             t.setAttr(b, value);
             this->dictionary[a].setValue(t);
@@ -93,23 +125,53 @@ void Table::setAttr(const QString &attr, const QVariant &value)
     {
         // Just been asked for the leaf
         if (attr[0].isDigit())
-            this->list[attr.toInt()].setValue(value);
+        {
+            const int index = attr.toInt();
+            Q_ASSERT(index > 0);
+            Q_ASSERT(index <= this->list.size());
+            this->list[index - 1].setValue(value);
+        }
         else
+        {
+            Q_ASSERT(this->dictionary.contains(attr));
             this->dictionary[attr].setValue(value);
+        }
     }
+
+    // Check we got what we wanted (at least while developing)
+    Q_ASSERT(getAttr(attr) == value);
 }
 
 
-QString Table::getString(const QString &attr) const { return getAttr(attr).toString(); }
+QString Table::getString(const QString &attr) const
+{
+    return getAttr(attr).toString();
+}
 
-void Table::setString(const QString &attr, const QString &value) { setAttr(attr, value); }
+void Table::setString(const QString &attr, const QString &value)
+{
+    qDebug() << "setString(" << attr << ", " << value << ")";
+    setAttr(attr, value);
+}
 
-int Table::getInt(const QString &attr) const { return getAttr(attr).toInt(); }
+int Table::getInt(const QString &attr) const
+{
+    return getAttr(attr).toInt();
+}
 
-double Table::getDouble(const QString &attr) const { return getAttr(attr).toDouble(); }
+double Table::getDouble(const QString &attr) const
+{
+    return getAttr(attr).toDouble();
+}
 
-Table Table::getTable(const QString &attr) const { return getAttr(attr).value<Table>(); }
+Table Table::getTable(const QString &attr) const
+{
+    return getAttr(attr).value<Table>();
+}
 
-int Table::getSequenceSize(const QString &attr) const { return getTable(attr).hash(); }
+int Table::getSequenceSize(const QString &attr) const
+{
+    return getTable(attr).hash();
+}
 
 };  // namespace LuaParser

@@ -34,6 +34,7 @@ class TestLuaParser : public QObject
     void test_case2a();
     void test_case2b();
     void test_case2c();
+    void test_setAttr();
     void test_file();
     void test_number_list();
 
@@ -257,6 +258,39 @@ void TestLuaParser::test_case2c()
     QCOMPARE(t2.hash(), 0);
     QCOMPARE(t2.keys().size(), 10);
     QCOMPARE(t2["height"].toInt(), 720);
+}
+
+void TestLuaParser::test_setAttr()
+{
+    const QString s =
+        ("s = {\n"
+         "    id = \"0BE7F379-3DC2-422B-AC14-50FA53C76C83\",\n"
+         "    internalName = \"clean13x11\",\n"
+         "    title = \"clean13x11\",\n"
+         "    type = \"layoutStyle\",\n"
+         "    {\n"
+         "        paperId = \"13x11-blurb\",\n"
+         "        resources = \"clean13x11\",\n"
+         "        styleName = \"clean\",\n"
+         "        templateId = \"A6B33CF4-0FA5-4F86-9A95-FED959EEA7B2\",\n"
+         "    },\n"
+         "  }\n");
+
+    const NamedVariant nv = parseLuaStruct(s);
+    // qDebug() << LuaGenerator::Generate(nv);
+    QCOMPARE(nv.name(), QString("s"));
+
+    QVERIFY(nv.value().canConvert<Table>());
+    Table t = nv.value().value<Table>();
+
+    QCOMPARE(t.getString("type"), QStringLiteral("layoutStyle"));
+    QCOMPARE(t.getString("1/styleName"), QStringLiteral("clean"));
+
+    t.setString("type", "changed");
+    QCOMPARE(t.getString("type"), QStringLiteral("changed"));
+
+    t.setString("1/styleName", "dirty");
+    QCOMPARE(t.getString("1/styleName"), QStringLiteral("dirty"));
 }
 
 void TestLuaParser::test_file()
