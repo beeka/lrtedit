@@ -18,6 +18,8 @@
 #include <QGraphicsScene>
 #include <QPainter>
 
+#include <math.h>
+
 // Ignore comparisons with floats for this translation unit, as we only want exact matches anyway
 #pragma clang diagnostic ignored "-Wfloat-equal"
 

@@ -14,6 +14,8 @@
 // along with LrtEdit.  If not, see <https://www.gnu.org/licenses/>.
 #include "layoutelement.h"
 
+#include <math.h>
+
 static bool verticallyOverlap(const QRectF &a, const QRectF &b)
 {
     return a.top() <= b.bottom() && a.bottom() >= b.top();
