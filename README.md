@@ -11,19 +11,21 @@ text editor, with aids in creating a custom page layout and visualising
 the templates. The end goal would be WYSIWYG editing of layouts.
 
 ## How to use
-First create a custom page on which to base the edited one on. Right-click on
-a page in your book and select "Save as Custom Page". The page will appear
-in the "Custom Pages" style (e.g. like Wedding or Clean) in the "Modify Page"
-layout list. Currently only automatic manipulation of existing photo elements 
-is supported so expect text blocks to break. You will have to restart lightroom 
-and re-apply the page layout to each affected page for the changes to take 
-effect.
+First create a custom page on which to base the edited one on: in Adobe 
+Lightroom, right-click on a page in your book and select "Save as Custom Page".
+The page will appear in the "Custom Pages" style (e.g. like Wedding or Clean) 
+in the "Modify Page" layout list. Open LrtEdit and check the tidied layouts
+by double-clicking on each page in the layout preview. Select "Save" from the 
+menu to update the layout + preview. Previews of the tidied pages are generated 
+with green highlights, so they can be spotted as 'special' in Lightroom.
+
+You will have to restart lightroom and **re-apply** the page layout to each affected
+page for the changes to take effect.
 
 The current implementation is very hard-coded and will load the custom pages 
 for the first book / page type it finds and will automatically tidy the elements 
 to snap to grid / align / apply spacing. Also note that any padding on any of 
-the elements is left untouched. Previews of the tidied pages are generated 
-with green highlights, so they can be spotted as 'special' in Lightroom.
+the elements is left untouched.
 
 ## Limitations
 This tool was made for normalising the layouts of a book made by combining 
@@ -45,3 +47,7 @@ preview.
 
 Being able to export / import settings (e.g. after disaster recovery or sharing 
 presets) has not been considered.
+
+## Licence
+This program is licensed under the GNU GPL v3 and uses the Qt library under the
+same licence conditions.
