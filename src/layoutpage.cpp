@@ -147,6 +147,24 @@ QImage LayoutPage::createImage() const
         scene.addLine(c.x(), c.y() - w, c.x(), c.y() + w, pen);
     }
 
+    for (auto const &t : text)
+    {
+        // Draw our own fill, rather than Qt::HorPattern, to get better control of scaling
+        const int s = 20;  // Space between (top of) each line
+        const int w = 5;   // Line width
+        const QColor textColour(Qt::black);
+
+        // NB: drawing from the bottom, as the axis is inverted (and the drawing is flipped)
+        for (qreal r = t.pos.bottom(); r > (t.pos.top() + s); r -= s)
+        {
+            const QRectF line(t.pos.left(), r - w, t.pos.width(), w);
+            scene.addRect(line, QPen(Qt::transparent), QBrush(textColour));
+        }
+        // draw half a line at the top (i.e. bottom when flipped)
+        const QRectF line(t.pos.topLeft(), QSizeF(t.pos.width() / 2, w));
+        scene.addRect(line, QPen(Qt::transparent), QBrush(textColour));
+    }
+
     scene.clearSelection();                         // Selections would also render to the file
     scene.setSceneRect(scene.itemsBoundingRect());  // Re-shrink the scene to it's bounding contents
     // Create the image with the exact size of the shrunk scene

@@ -30,7 +30,7 @@ class LayoutPage
     QSize size;
 
     QVector<LayoutElement> photos;
-    // QVector<LayoutElement> text;
+    QVector<LayoutElement> text;
 
     QRectF boundingBox() const;
 

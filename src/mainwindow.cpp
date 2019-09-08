@@ -187,13 +187,23 @@ void MainWindow::loadTemplate(const QString &specificTemplatePages)
         for (int e = 1; e <= elements.hash(); e++)
         {
             LayoutElement le;
-            le.index = elements.getInt(QString::number(e) + "/hints/photoIndex");
             le.pos.setX(elements.getDouble(QString::number(e) + "/transform/x"));
             le.pos.setY(elements.getDouble(QString::number(e) + "/transform/y"));
             le.pos.setWidth(elements.getDouble(QString::number(e) + "/transform/width"));
             le.pos.setHeight(elements.getDouble(QString::number(e) + "/transform/height"));
-            lp.photos.resize(le.index);
-            lp.photos[le.index - 1] = le;
+            // placeholderType = "photo",
+            if (elements.getString(QString::number(e) + "/placeholderType") == "photo")
+            {
+                le.index = elements.getInt(QString::number(e) + "/hints/photoIndex");
+                lp.photos.resize(le.index);
+                lp.photos[le.index - 1] = le;
+            }
+            else if (elements.getString(QString::number(e) + "/placeholderType") == "text")
+            {
+                le.index = elements.getInt(QString::number(e) + "/hints/textIndex");
+                lp.text.resize(std::max(lp.text.size(), le.index));  // NB: max required as order is not guaranteed
+                lp.text[le.index - 1] = le;
+            }
         }
         const auto br = lp.boundingBox();
         qDebug() << "Bounding box is" << br;
@@ -251,6 +261,16 @@ void MainWindow::loadTemplate(const QString &specificTemplatePages)
                            .arg(p.pos.width())
                            .arg(p.pos.x())
                            .arg(p.pos.y());
+        }
+
+        for (auto const &t : lp.text)
+        {
+            qInfo() << lp.name << "text" << t.index
+                    << QString("transform = {height = %1, width = %2, x = %3, y = %4}")
+                           .arg(t.pos.height())
+                           .arg(t.pos.width())
+                           .arg(t.pos.x())
+                           .arg(t.pos.y());
         }
     }
 }
