@@ -33,3 +33,4 @@
 build-lrtedit-*
 lrtedit/
 lrtedit.zip
+*.pro.user*
