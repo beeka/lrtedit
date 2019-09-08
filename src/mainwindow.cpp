@@ -30,6 +30,7 @@ MainWindow::MainWindow(QWidget *parent) :
                                           ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    ui->menuBar->hide();
 
     ui->pagesPreview->setViewMode(QListWidget::IconMode);
     ui->pagesPreview->setIconSize(QSize(100, 100));
