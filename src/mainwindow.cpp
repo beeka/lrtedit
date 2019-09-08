@@ -214,8 +214,8 @@ void MainWindow::loadTemplate(const QString &specificTemplatePages)
         const QImage image = lp.createImage();
 
         // Save a preview
-        // const QString previewPath = QDir::temp().filePath(lp.previewName);
-        const QString previewPath = QDir("C:/tmp").filePath(lp.previewName);
+        const QString previewPath = QDir::temp().filePath(lp.previewName);
+        // const QString previewPath = QDir("C:/tmp").filePath(lp.previewName);
         image.scaled(QSize(100, 100), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation).save(previewPath);
 
         // Save a full png?
