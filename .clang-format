@@ -1,11 +1,12 @@
 ---
 Language: Cpp
 BasedOnStyle: Google
-AllowShortFunctionsOnASingleLine: Inline
+AllowShortFunctionsOnASingleLine: InlineOnly
 BreakBeforeBraces: Allman
 IncludeBlocks: Preserve
 IndentWidth: '4'
 MaxEmptyLinesToKeep: '3'
 SortIncludes: 'true'
-ColumnLimit: 120
+ColumnLimit: 160
+AllowShortIfStatementsOnASingleLine: Never
 ...
