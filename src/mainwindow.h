@@ -62,8 +62,15 @@ class MainWindow : public QMainWindow
 
     void on_actionSave_triggered();
 
+    /// Copy everything from C:\Users\XXXXXX\AppData\Roaming\Adobe\Lightroom\Layout Templates\12x12-blurb to a new
+    /// directory
+    void on_actionBackup_triggered();
+
    private:
     Ui::MainWindow *ui;
+
+    /// Default backup location
+    QString m_backupRoot;
 
     /// The top-level installation directory, e.g. %ProgramFiles%\Adobe\Adobe Lightroom\Templates\Layout Templates
     QString m_installRoot;

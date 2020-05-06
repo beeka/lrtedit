@@ -45,7 +45,9 @@ class LayoutPage
     /// Snap the edges of the boxes to the desired margin
     void alignToMargins(const QMarginsF &margin, int captureWidth = 42);
 
-    QImage createImage() const;
+    /// Render an image of this layout
+    /// @param showDetails Display index, size and position, rather than an icon
+    QImage createImage(bool showDetails = false) const;
 };
 
 #endif // LAYOUTPAGE_H

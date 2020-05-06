@@ -24,10 +24,57 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QMessageBox>
 
-MainWindow::MainWindow(QWidget *parent) :
-                                          QMainWindow(parent),
-                                          ui(new Ui::MainWindow)
+// From kayleeFrye_onDeck at
+// https://stackoverflow.com/questions/2536524/copy-directory-using-qt
+bool copyPath(QString sourceDir, QString destinationDir, bool overWriteDirectory)
+{
+  QDir originDirectory(sourceDir);
+
+  if (!originDirectory.exists())
+  {
+    return false;
+  }
+
+  QDir destinationDirectory(destinationDir);
+
+  if (destinationDirectory.exists() && !overWriteDirectory)
+  {
+    return false;
+  }
+  else if (destinationDirectory.exists() && overWriteDirectory)
+  {
+    destinationDirectory.removeRecursively();
+  }
+
+  originDirectory.mkpath(destinationDir);
+
+  foreach (QString directoryName, originDirectory.entryList(QDir::Dirs | QDir::NoDotAndDotDot))
+  {
+    QString destinationPath = destinationDir + "/" + directoryName;
+    originDirectory.mkpath(destinationPath);
+    copyPath(sourceDir + "/" + directoryName, destinationPath, overWriteDirectory);
+  }
+
+  foreach (QString fileName, originDirectory.entryList(QDir::Files))
+  {
+    QFile::copy(sourceDir + "/" + fileName, destinationDir + "/" + fileName);
+  }
+
+  /*! Possible race-condition mitigation? */
+  QDir finalDestination(destinationDir);
+  finalDestination.refresh();
+
+  if (finalDestination.exists())
+  {
+    return true;
+  }
+
+  return false;
+}
+
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
     ui->menuBar->hide();
@@ -44,34 +91,37 @@ MainWindow::~MainWindow() { delete ui; }
 
 void MainWindow::determineRoots()
 {
-    // const QString programFiles = qgetenv("ProgramFiles");
-    const QString programFiles = qgetenv("ProgramW6432");
-    m_installRoot = QDir(programFiles).filePath("Adobe/Adobe Lightroom/Templates/Layout Templates");
-    if (!QFile::exists(m_installRoot))
-    {
-        qCritical() << "Path does not exist!" << m_installRoot;
-        m_installRoot.clear();
-    }
-    else
-    {
-        qDebug() << "Determined install root to be" << m_installRoot;
-    }
+  m_backupRoot = QDir::home().filePath("backups");
+  qDebug() << "Determined backup root to be" << m_backupRoot;
 
-    const QString appData = qgetenv("APPDATA");
-    // const QString programFiles = qgetenv("ProgramFiles");
-    m_userRoot = QDir(appData).filePath("Adobe/Lightroom/Layout Templates");
-    if (!QFile::exists(m_userRoot))
-    {
-        qCritical() << "Path does not exist!" << m_userRoot;
-        m_userRoot.clear();
-    }
-    else
-    {
-        qDebug() << "Determined user root to be" << m_userRoot;
-    }
+  // const QString programFiles = qgetenv("ProgramFiles");
+  const QString programFiles = qgetenv("ProgramW6432");
+  m_installRoot = QDir(programFiles).filePath("Adobe/Adobe Lightroom/Templates/Layout Templates");
+  if (!QFile::exists(m_installRoot))
+  {
+    qCritical() << "Path does not exist!" << m_installRoot;
+    m_installRoot.clear();
+  }
+  else
+  {
+    qDebug() << "Determined install root to be" << m_installRoot;
+  }
 
-    loadTemplateSizes(m_installRoot);
-    loadTemplates(m_userRoot);
+  const QString appData = qgetenv("APPDATA");
+  // const QString programFiles = qgetenv("ProgramFiles");
+  m_userRoot = QDir(appData).filePath("Adobe/Lightroom/Layout Templates");
+  if (!QFile::exists(m_userRoot))
+  {
+    qCritical() << "Path does not exist!" << m_userRoot;
+    m_userRoot.clear();
+  }
+  else
+  {
+    qDebug() << "Determined user root to be" << m_userRoot;
+  }
+
+  loadTemplateSizes(m_installRoot);
+  loadTemplates(m_userRoot);
 }
 
 void MainWindow::setRoot(const QString &path)
@@ -219,13 +269,22 @@ void MainWindow::loadTemplate(const QString &specificTemplatePages)
         image.scaled(QSize(100, 100), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation).save(previewPath);
 
         // Save a full png?
-        //        const QString pngPath = previewPath.left(previewPath.length() - 4) + ".png";
+        //        const QString pngPath = previewPath.left(previewPath.length()
+        //        - 4) + ".png";
         //        // qDebug() << "PNG saved to" <<
         //        image.save(pngPath);
 
-        ui->pagesPreview->addItem(
-            new QListWidgetItem(QIcon(QPixmap::fromImage(image)), QString::number(i)));  // page.getString("title")));
+        auto *item = new QListWidgetItem(QIcon(QPixmap::fromImage(image)),
+                                         QString::number(i));
+        item->setData(Qt::UserRole, QVariant::fromValue(m_layoutPages.size()));
+        ui->pagesPreview->addItem(item);
 
+        m_layoutPages.append(lp);
+
+        //        ui->pagesPreview->addItem(
+        //            new QListWidgetItem(QIcon(QPixmap::fromImage(image)),
+        //            QString::number(i)));  // page.getString("title")));
+#if 0
         const double grid = 0.5;
         const double border = 52.5;  // All-round margin
         const QMarginsF margin(border, border, border, border);
@@ -249,6 +308,7 @@ void MainWindow::loadTemplate(const QString &specificTemplatePages)
 
         ui->pagesPreview->addItem(
             new QListWidgetItem(QIcon(QPixmap::fromImage(snappedImage)), QString::number(i) + "s"));
+#endif
     }
 
     // Dump updated positions
@@ -302,9 +362,26 @@ void MainWindow::on_templateSizesCB_currentIndexChanged(int index) {}
 
 void MainWindow::on_pagesPreview_itemDoubleClicked(QListWidgetItem *item)
 {
-    PageEditor editor(this);
-    editor.setPreviewImage(item->icon());
-    editor.exec();
+  bool hasIndex = false;
+  const int index = item->data(Qt::UserRole).toInt(&hasIndex);
+  LayoutPage lp = m_layoutPages[index];
+
+  PageEditor editor(this);
+  editor.setPreviewImage(item->icon());
+  if (hasIndex)
+    editor.setLayoutPage(&lp);
+  const int result = editor.exec();
+  if (result == QDialog::Accepted)
+  {
+    if (hasIndex)
+    {
+      m_layoutPages[index] = lp;
+
+      // Update the icon / preview
+      const QImage image = lp.createImage();
+      item->setIcon(QIcon(QPixmap::fromImage(image)));
+    }
+  }
 }
 
 void MainWindow::on_actionSave_triggered()
@@ -353,4 +430,34 @@ void MainWindow::on_actionSave_triggered()
             qCritical() << "Error opening file for writing:" << path;
         }
     }
+}
+
+void MainWindow::on_actionBackup_triggered() {
+  const QString backupDir = QFileDialog::getExistingDirectory(this, tr("Select a directory to backup these custom pages"), m_backupRoot,
+                                                              QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+  // const QString backupDir("C:/Users/Steven/backups");
+
+  if (backupDir.isEmpty())
+    return;
+
+  // Update backup root?
+  m_backupRoot = backupDir;
+
+  // Copy m_currentTemplatePath to backupDir
+  QStringList l = m_currentTemplatePath.split('/');  // QDir::separator());
+  l.removeLast();  // Remove lua filename (e.g. templatePages.lua)
+  l.removeLast();  // Remove template name (e.g. custompages13x11-blurb)
+  const QString rootDir = l.join('/');  //(QDir::separator());
+
+  const QString name = QFileInfo(rootDir).fileName();
+  const QString destinationDir = QDir(backupDir).filePath(name + ".bak");
+  const bool overWriteDirectory(false);
+  qDebug() << "Copying" << rootDir << "to" << destinationDir;
+  const bool okay = copyPath(rootDir, destinationDir, overWriteDirectory);
+  qDebug() << "Copied" << rootDir << "to" << destinationDir << ": result =" << okay;
+  if (okay)
+    QMessageBox::information(this, "Backup Success", "Templates backed up to:\n" + destinationDir);
+  else
+    QMessageBox::critical(this, "Backup Failure", "Error backing up to:\n" + destinationDir);
 }

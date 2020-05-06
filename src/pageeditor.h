@@ -18,6 +18,9 @@
 #include <QDialog>
 #include <QIcon>
 
+class LayoutPage;
+class LayoutPageModel;
+
 namespace Ui {
 class PageEditor;
 }
@@ -31,10 +34,23 @@ class PageEditor : public QDialog
     ~PageEditor();
 
    public slots:
+    void refreshPreviewImage();
+
     void setPreviewImage(const QIcon &icon);
+
+    void setLayoutPage(LayoutPage *lp);
+
+   private slots:
+    void on_snapMarginsBtn_clicked();
+
+    void on_applySpacingBtn_clicked();
+
+    void on_snapToGridBtn_clicked();
 
    private:
     Ui::PageEditor *ui;
+    LayoutPage *m_layoutPage;
+    LayoutPageModel *m_layoutPageModel;
 };
 
 #endif // PAGEEDITOR_H

@@ -27,6 +27,7 @@ CONFIG += c++11
 SOURCES += \
         layoutelement.cpp \
         layoutpage.cpp \
+        layoutpagemodel.cpp \
         luagenerator.cpp \
         luaparser.cpp \
         luatable.cpp \
@@ -38,6 +39,7 @@ SOURCES += \
 HEADERS += \
         layoutelement.h \
         layoutpage.h \
+        layoutpagemodel.h \
         luagenerator.h \
         luaparser.h \
         luatable.h \

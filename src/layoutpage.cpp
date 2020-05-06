@@ -16,6 +16,7 @@
 
 #include <QDebug>
 #include <QGraphicsScene>
+#include <QGraphicsSimpleTextItem>
 #include <QPainter>
 
 #include <math.h>
@@ -129,49 +130,80 @@ void LayoutPage::alignToMargins(const QMarginsF &margin, int captureWidth)
     }
 }
 
-QImage LayoutPage::createImage() const
+QImage LayoutPage::createImage(bool showDetails) const
 {
-    QGraphicsScene scene;
-    // scene.setBackgroundBrush(Qt::lightGray);
+  QGraphicsScene scene;
+  // scene.setBackgroundBrush(Qt::lightGray);
 
-    scene.addRect(QRectF(QPointF(0, 0), size), QPen(Qt::lightGray), QBrush(Qt::white));
+  scene.addRect(QRectF(QPointF(0, 0), size), QPen(Qt::lightGray), QBrush(Qt::white));
 
-    for (auto const &p : photos)
+  for (auto const &p : photos)
+  {
+    scene.addRect(p.pos, QPen(Qt::black), QBrush(Qt::darkGray));
+
+    const int w = 20;  // pt in each direction
+    const auto c = p.pos.center();
+
+    if (!showDetails)
     {
-        scene.addRect(p.pos, QPen(Qt::black), QBrush(Qt::darkGray));
-        // add a cross
-        QPen pen(Qt::darkGreen, 5);
-        const int w = 20;  // pt in each direction
-        const auto c = p.pos.center();
-        scene.addLine(c.x() - w, c.y(), c.x() + w, c.y(), pen);
-        scene.addLine(c.x(), c.y() - w, c.x(), c.y() + w, pen);
+      // add a cross
+      QPen pen(Qt::darkGreen, 5);
+      scene.addLine(c.x() - w, c.y(), c.x() + w, c.y(), pen);
+      scene.addLine(c.x(), c.y() - w, c.x(), c.y() + w, pen);
     }
-
-    for (auto const &t : text)
+    else
     {
-        // Draw our own fill, rather than Qt::HorPattern, to get better control of scaling
-        const int s = 20;  // Space between (top of) each line
-        const int w = 5;   // Line width
-        const QColor textColour(Qt::black);
+      QGraphicsSimpleTextItem *text = scene.addSimpleText(QString("Photo %1\n%2 x %3\n%4 + %5")
+                                                              .arg(p.index)
+                                                              .arg(p.pos.width())
+                                                              .arg(p.pos.height())
+                                                              .arg(p.pos.top())
+                                                              .arg(p.pos.left()));
+      QFont f = text->font();
+      f.setPointSize(w);
+      text->setFont(f);
 
-        // NB: drawing from the bottom, as the axis is inverted (and the drawing is flipped)
-        for (qreal r = t.pos.bottom(); r > (t.pos.top() + s); r -= s)
-        {
-            const QRectF line(t.pos.left(), r - w, t.pos.width(), w);
-            scene.addRect(line, QPen(Qt::transparent), QBrush(textColour));
-        }
-        // draw half a line at the top (i.e. bottom when flipped)
-        const QRectF line(t.pos.topLeft(), QSizeF(t.pos.width() / 2, w));
-        scene.addRect(line, QPen(Qt::transparent), QBrush(textColour));
+      text->setBrush(QBrush(Qt::black));
+      const QRectF tbox = text->boundingRect();
+      const QPointF tpos(c.x() - (tbox.width() / 2), c.y() + (tbox.height() / 2));
+      text->setPos(tpos);
+
+      // Fudge to flip the text, as we are rendering upsidedown
+      QTransform transform;
+      transform.scale(1.0, -1.0);
+      text->setTransform(transform);
     }
+  }
 
-    scene.clearSelection();                         // Selections would also render to the file
-    scene.setSceneRect(scene.itemsBoundingRect());  // Re-shrink the scene to it's bounding contents
-    // Create the image with the exact size of the shrunk scene
-    QImage image(scene.sceneRect().size().toSize(), QImage::Format_ARGB32);
-    image.fill(Qt::transparent);  // Start all pixels transparent
+  for (auto const &t : text)
+  {
+    // Draw our own fill, rather than Qt::HorPattern, to get better control of
+    // scaling
+    const int s = 20;  // Space between (top of) each line
+    const int w = 5;   // Line width
+    const QColor textColour(Qt::black);
 
-    QPainter painter(&image);
-    scene.render(&painter);
-    return image.mirrored(false, true);  // Mirror vertically as the axis is inverted
+    // NB: drawing from the bottom, as the axis is inverted (and the drawing is
+    // flipped)
+    for (qreal r = t.pos.bottom(); r > (t.pos.top() + s); r -= s)
+    {
+      const QRectF line(t.pos.left(), r - w, t.pos.width(), w);
+      scene.addRect(line, QPen(Qt::transparent), QBrush(textColour));
+    }
+    // draw half a line at the top (i.e. bottom when flipped)
+    const QRectF line(t.pos.topLeft(), QSizeF(t.pos.width() / 2, w));
+    scene.addRect(line, QPen(Qt::transparent), QBrush(textColour));
+  }
+
+  scene.clearSelection();                         // Selections would also render to the file
+  scene.setSceneRect(scene.itemsBoundingRect());  // Re-shrink the scene to it's
+                                                  // bounding contents
+  // Create the image with the exact size of the shrunk scene
+  QImage image(scene.sceneRect().size().toSize(), QImage::Format_ARGB32);
+  image.fill(Qt::transparent);  // Start all pixels transparent
+
+  QPainter painter(&image);
+  scene.render(&painter);
+  return image.mirrored(false,
+                        true);  // Mirror vertically as the axis is inverted
 }
